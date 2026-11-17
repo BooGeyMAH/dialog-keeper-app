@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Dialog Keeper</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --bg2: var(--tg-theme-secondary-bg-color, #f1f3f6);
+    --text: var(--tg-theme-text-color, #14171a);
+    --hint: var(--tg-theme-hint-color, #7d8791);
+    --accent: var(--tg-theme-button-color, #2f7cf6);
+    --accent-text: var(--tg-theme-button-text-color, #ffffff);
+    --radius: 18px;
+    --ok: #2bb673; --bad: #e5484d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg2); color: var(--text);
+    font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); min-height: 100vh; }
+  .hero { padding: 28px 20px 40px; color: #fff; text-align: center;
+    background: linear-gradient(135deg, #6a5cff 0%, #2f7cf6 55%, #22c1c3 100%);
+    border-radius: 0 0 28px 28px; }
+  .hero .logo { font-size: 44px; line-height: 1; }
+  .hero h1 { margin: 8px 0 2px; font-size: 24px; letter-spacing: .2px; }
+  .hero p { margin: 0; opacity: .85; font-size: 14px; }
+  main { padding: 0 16px; margin-top: -22px; }
+  section { display: none; animation: fade .25s ease; }
+  section.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .card { background: var(--bg); border-radius: var(--radius); padding: 16px;
+    margin-bottom: 12px; box-shadow: 0 4px 18px rgba(20,30,60,.07); }
+  .card h2 { margin: 0 0 4px; font-size: 17px; }
+  .card p { margin: 0; color: var(--hint); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .tile { background: var(--bg); border: 0; border-radius: var(--radius); padding: 16px 12px;
+    text-align: left; color: var(--text); font: inherit; cursor: pointer;
+    box-shadow: 0 4px 18px rgba(20,30,60,.07); transition: transform .12s; }
+  .tile:active { transform: scale(.96); }
+  .tile .ico { font-size: 26px; display: block; margin-bottom: 8px; }
+  .tile b { display: block; font-size: 15px; }
+  .tile small { color: var(--hint); font-size: 12.5px; }
+  .tile.wide { grid-column: span 2; display: flex; align-items: center; gap: 14px; }
+  .tile.wide .ico { margin: 0; font-size: 30px; }
+  .feature { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; }
+  .feature + .feature { border-top: 1px solid var(--bg2); }
+  .feature .ico { font-size: 22px; width: 32px; text-align: center; }
+  .feature b { display: block; font-size: 15px; }
+  .feature span { color: var(--hint); font-size: 13.5px; }
+  input[type=text] { width: 100%; border: 2px solid transparent; background: var(--bg2);
+    color: var(--text); border-radius: 14px; padding: 14px; font: inherit; outline: none; }
+  input[type=text]:focus { border-color: var(--accent); }
+  .btn { width: 100%; border: 0; border-radius: 14px; padding: 14px; margin-top: 10px;
+    background: var(--accent); color: var(--accent-text); font: 600 16px inherit; cursor: pointer;
+    transition: transform .12s, opacity .2s; }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: var(--bg2); color: var(--text); }
+  .btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); }
+  .btn:disabled { opacity: .45; }
+  .err { color: var(--bad); font-size: 13px; margin-top: 8px; min-height: 18px; }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--bg);
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 18px rgba(20,30,60,.08); }
+  nav button { flex: 1; border: 0; background: none; color: var(--hint); font: 12px inherit;
+    padding: 6px 0; border-radius: 12px; cursor: pointer; }
+  nav button .ico { display: block; font-size: 22px; }
+  nav button.active { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="logo">🗂️</div>
+  <h1>Dialog Keeper</h1>
+  <p>Помощник вашей переписки</p>
+</header>
+
+<main>
+  <section id="home" class="active">
+    <div class="grid">
+      <button class="tile" data-act="on"><span class="ico">▶️</span><b>Включить</b><small>сохранение и уведомления</small></button>
+      <button class="tile" data-act="off"><span class="ico">⏸</span><b>Остановить</b><small>и очистить историю</small></button>
+      <button class="tile" data-act="status"><span class="ico">📊</span><b>Статус</b><small>проверить подключение</small></button>
+      <button class="tile" data-act="connect"><span class="ico">🔌</span><b>Подключить</b><small>как добавить бота</small></button>
+      <button class="tile wide" data-go="tiktok"><span class="ico">🎵</span><span><b>Скачать из TikTok</b><small>вставьте ссылку на видео</small></span></button>
+    </div>
+    <div class="card">
+      <h2>Что умеет бот</h2>
+      <div class="feature"><span class="ico">🗑</span><div><b>Удалённые сообщения</b><span>Пришлю последнюю сохранённую версию и доступное вложение</span></div></div>
+      <div class="feature"><span class="ico">✏️</span><div><b>Изменённые сообщения</b><span>Покажу старую и новую версии</span></div></div>
+      <div class="feature"><span class="ico">📎</span><div><b>Сохранение по ответу</b><span>Ответьте «сохранить» на доступное фото или видео</span></div></div>
+    </div>
+  </section>
+
+  <section id="tiktok">
+    <div class="card">
+      <h2>🎵 Видео из TikTok</h2>
+      <p>Вставьте ссылку — бот пришлёт видеофайл в чат (до 50 МБ).</p>
+      <div style="height:12px"></div>
+      <input id="url" type="text" inputmode="url" autocomplete="off" placeholder="https://vm.tiktok.com/…">
+      <div class="err" id="err"></div>
+      <button class="btn" id="send">Скачать</button>
+      <button class="btn ghost" id="paste">Вставить из буфера</button>
+    </div>
+    <div class="card"><p>Скачивайте видео только для личного использования и с уважением к правам автора. Приложение закроется после отправки — видео придёт в чат с ботом.</p></div>
+  </section>
+
+  <section id="more">
+    <div class="card">
+      <h2>Данные и конфиденциальность</h2>
+      <p>Бот хранит текст и идентификаторы файлов только в выбранных чатах и только пока запущен. Срок хранения по умолчанию — 7 дней. Telegram не сообщает, кто именно удалил сообщение.</p>
+    </div>
+    <div class="card">
+      <button class="btn ghost" style="margin:0 0 10px" data-act="settings">⚙️ Настройки в чате</button>
+      <button class="btn ghost" style="margin:0 0 10px" data-act="help">ℹ️ Как это работает</button>
+      <button class="btn ghost" style="margin:0 0 10px" data-act="demo">🎥 Пример уведомления</button>
+      <button class="btn danger" style="margin:0" data-act="wipe">🧹 Удалить мои данные</button>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button class="active" data-go="home"><span class="ico">🏠</span>Главная</button>
+  <button data-go="tiktok"><span class="ico">🎵</span>TikTok</button>
+  <button data-go="more"><span class="ico">⚙️</span>Ещё</button>
+</nav>
+
+<script>
+(function () {
+  var tg = window.Telegram && Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // Допустимые действия совпадают со списком в bot.py (WEBAPP_ACTIONS).
+  function send(payload) {
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    var data = JSON.stringify(payload);
+    if (tg && tg.sendData) tg.sendData(data);   // закрывает приложение, бот получает данные
+    else alert('Предпросмотр: ' + data);
+  }
+
+  function go(id) {
+    document.querySelectorAll('section').forEach(function (s) { s.classList.toggle('active', s.id === id); });
+    document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('active', b.dataset.go === id); });
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act],[data-go]');
+    if (!el) return;
+    if (el.dataset.go) return go(el.dataset.go);
+    send({ a: el.dataset.act });
+  });
+
+  var input = document.getElementById('url'), err = document.getElementById('err');
+  function isTikTok(v) {
+    try {
+      var u = new URL(v.trim());
+      var h = u.hostname.toLowerCase();
+      return /^https?:$/.test(u.protocol) && (h === 'tiktok.com' || h.endsWith('.tiktok.com'));
+    } catch (_) { return false; }
+  }
+  document.getElementById('send').addEventListener('click', function () {
+    var v = input.value.trim();
+    if (!isTikTok(v)) { err.textContent = 'Нужна ссылка на tiktok.com или vm.tiktok.com'; return; }
+    err.textContent = '';
+    send({ a: 'tiktok', url: v });
+  });
+  document.getElementById('paste').addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function (t) { input.value = t; err.textContent = ''; },
+        function () { err.textContent = 'Нет доступа к буферу — вставьте вручную'; });
+    } else err.textContent = 'Вставьте ссылку вручную';
+  });
+})();
+</script>
+</body>
+</html>
